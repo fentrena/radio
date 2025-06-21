@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAGMI RADIO - Classic Skin with Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* NEW: Windows 95 Light Gray Theme */
+            --winamp-main-bg: #c0c0c0;
+            --winamp-dark-shadow: #808080;
+            --winamp-light-shadow: #ffffff;
+            --winamp-title-bar-blue: #000080;
+            --winamp-title-text: #ffffff;
+            --winamp-text: #000000;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: #008080; /* Teal desktop background */
+        }
+
+        .winamp-window {
+            background-color: var(--winamp-main-bg);
+            border: 1px solid var(--winamp-dark-shadow);
+            border-top-color: var(--winamp-light-shadow);
+            border-left-color: var(--winamp-light-shadow);
+            box-shadow: 1px 1px 0px #000;
+            padding: 3px;
+            width: 275px;
+        }
+        
+        .winamp-title-bar {
+            background: linear-gradient(to right, var(--winamp-title-bar-blue), #1084d0);
+            height: 14px;
+            color: var(--winamp-title-text);
+            padding-left: 2px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            line-height: 14px;
+            white-space: nowrap;
+        }
+
+        .title-bar-buttons button {
+            width: 10px; height: 10px;
+            background-color: var(--winamp-main-bg);
+            border-top: 1px solid var(--winamp-light-shadow);
+            border-left: 1px solid var(--winamp-light-shadow);
+            border-right: 1px solid var(--winamp-dark-shadow);
+            border-bottom: 1px solid var(--winamp-dark-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .title-bar-buttons button:active {
+            border-top-color: var(--winamp-dark-shadow);
+            border-left-color: var(--winamp-dark-shadow);
+            border-right-color: var(--winamp-light-shadow);
+            border-bottom-color: var(--winamp-light-shadow);
+        }
+
+        .winamp-screen {
+            background-color: #000;
+            border: 2px inset var(--winamp-dark-shadow);
+            padding: 4px 6px;
+            margin: 5px 0;
+            height: 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        #visualizer {
+            width: 100%;
+            height: 16px;
+        }
+        
+        .track-info {
+            font-size: 0.75rem;
+            line-height: 1;
+            color: #05f804;
+        }
+
+        .winamp-button {
+            background-color: var(--winamp-main-bg);
+            border: 1px solid var(--winamp-dark-shadow);
+            border-top-color: var(--winamp-light-shadow);
+            border-left-color: var(--winamp-light-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 23px;
+            height: 18px;
+            color: var(--winamp-text);
+        }
+        .winamp-button:active, .winamp-button.active {
+            border-top-color: var(--winamp-dark-shadow);
+            border-left-color: var(--winamp-dark-shadow);
+            border-right-color: var(--winamp-light-shadow);
+            border-bottom-color: var(--winamp-light-shadow);
+            background: repeating-conic-gradient(#c0c0c0 0% 25%, #f0f0f0 0% 50%) 50% / 2px 2px;
+        }
+        .winamp-button svg {
+            fill: var(--winamp-text);
+        }
+        .winamp-button:active svg { transform: translate(1px, 1px); }
+
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 10px;
+            background: #808080;
+            border: 2px inset var(--winamp-dark-shadow);
+            cursor: pointer; padding: 0;
+        }
+        
+        #seek-bar::-webkit-slider-thumb, 
+        #volume-slider::-webkit-slider-thumb, 
+        #balance-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 12px; height: 18px;
+            background-color: var(--winamp-main-bg);
+            border-top: 1px solid var(--winamp-light-shadow);
+            border-left: 1px solid var(--winamp-light-shadow);
+            border-right: 1px solid var(--winamp-dark-shadow);
+            border-bottom: 1px solid var(--winamp-dark-shadow);
+        }
+
+        .playlist-window {
+            background-color: var(--winamp-main-bg);
+            border: 1px solid var(--winamp-dark-shadow);
+            border-top-color: var(--winamp-light-shadow);
+            border-left-color: var(--winamp-light-shadow);
+            margin-top: 4px; padding: 3px; width: 275px;
+        }
+
+        .playlist-item { color: var(--winamp-text); }
+        .playlist-item.active { background-color: var(--winamp-title-bar-blue); color: white; }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center">
+
+    <audio id="audio-player"></audio>
+    <input type="file" id="file-input" multiple accept="audio/*" class="hidden">
+
+    <div id="player-window" class="winamp-window select-none">
+        <div class="winamp-title-bar flex justify-between items-center">
+            <div class="flex items-center">
+                <svg width="12" height="12" viewBox="0 0 12 12" class="mr-1"><path fill="#c0c0c0" d="M0 0h12v1H0zM0 2h1v8H0zM2 2h8v1H2zM11 2h1v8h-1zM2 10h8v1H2zM0 11h12v1H0z"/></svg>
+                <span>WAGMI RADIO</span>
+            </div>
+            <div class="flex items-center gap-px title-bar-buttons">
+                <button><svg width="5" height="1"><path fill="#000" d="M0 0h5v1H0z"/></svg></button>
+                <button><svg width="7" height="7"><path stroke="#000" fill="none" d="M0.5 0.5h6v6h-6z"/></svg></button>
+                <button class="font-bold text-black text-xs leading-none">X</button>
+            </div>
+        </div>
+        <div class="p-1 space-y-1">
+            <div class="winamp-screen">
+                <div class="track-info" id="track-title-info">
+                     <span id="track-index">1.</span> <span id="track-title" class="truncate">No File Loaded</span> (<span id="time-display">0:00</span>)
+                </div>
+                <canvas id="visualizer"></canvas>
+            </div>
+
+            <div class="flex items-center gap-1">
+                <input type="range" id="volume-slider" min="0" max="100" value="80" class="w-16">
+                <input type="range" id="balance-slider" value="50" class="w-16">
+                <button id="eq-btn" class="winamp-button !w-auto !h-auto px-2 py-0.5 text-xs">EQ</button>
+                <button id="pl-btn" class="winamp-button active !w-auto !h-auto px-2 py-0.5 text-xs">PL</button>
+            </div>
+            
+            <input type="range" id="seek-bar" value="0" class="w-full">
+
+            <div class="flex items-center justify-between mt-1">
+                <div class="flex items-center gap-px">
+                    <button id="prev-btn" class="winamp-button"><svg width="10" height="9"><path d="M9,0 L7,0 L0,4.5 L7,9 L9,9 L9,7.2 L3.6,4.5 L9,1.8 L9,0 M2,0 L0,0 L0,9 L2,9 L2,0 Z"/></svg></button>
+                    <button id="play-btn" class="winamp-button"><svg width="9" height="9"><path d="M0,0 L9,4.5 L0,9 L0,0 Z"/></svg></button>
+                    <button id="pause-btn" class="winamp-button hidden"><svg width="9" height="9"><path d="M0,0 L3,0 L3,9 L0,9 L0,0 M6,0 L9,0 L9,9 L6,9 L6,0 Z"/></svg></button>
+                    <button id="stop-btn" class="winamp-button"><svg width="9" height="9"><path d="M0,0 L9,0 L9,9 L0,9 L0,0 Z"/></svg></button>
+                    <button id="next-btn" class="winamp-button"><svg width="10" height="9"><path d="M0,9 L2,9 L9,4.5 L2,0 L0,0 L0,1.8 L5.4,4.5 L0,7.2 L0,9 M7,9 L9,9 L9,0 L7,0 L7,9 Z"/></svg></button>
+                </div>
+                <button id="add-files-btn" class="winamp-button"><svg width="16" height="12" viewBox="0 0 16 12"><path d="M3.5 3.5 L8 9 L12.5 3.5z M2 10 L14 10 L14 11 L2 11z"/></svg></button>
+                <div class="flex items-center gap-1">
+                    <button id="shuffle-btn" class="winamp-button !w-auto px-2 text-xs">SHUFFLE</button>
+                    <button id="repeat-btn" class="winamp-button !w-auto px-2 text-xs">REPEAT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Playlist Window -->
+    <div id="playlist-window" class="winamp-window playlist-window">
+        <div id="playlist" class="h-32 overflow-y-auto text-sm bg-black p-1"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const audio = document.getElementById('audio-player');
+            const fileInput = document.getElementById('file-input');
+            const addFilesBtn = document.getElementById('add-files-btn');
+            const playBtn = document.getElementById('play-btn');
+            const pauseBtn = document.getElementById('pause-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const seekBar = document.getElementById('seek-bar');
+            const volumeSlider = document.getElementById('volume-slider');
+            const timeDisplayEl = document.getElementById('time-display');
+            const trackTitleEl = document.getElementById('track-title');
+            const trackIndexEl = document.getElementById('track-index');
+            const playlistEl = document.getElementById('playlist');
+            const plBtn = document.getElementById('pl-btn');
+            const playlistWindow = document.getElementById('playlist-window');
+            const shuffleBtn = document.getElementById('shuffle-btn');
+            const repeatBtn = document.getElementById('repeat-btn');
+            
+            // Visualizer setup
+            const canvas = document.getElementById('visualizer');
+            const canvasCtx = canvas.getContext('2d');
+            let audioCtx;
+            let analyser;
+            let source;
+            let bufferLength;
+            let dataArray;
+
+            let playlist = [];
+            let currentTrackIndex = 0;
+            let history = []; 
+            let isShuffled = false;
+            let repeatMode = 'none';
+            
+            function setupAudioContext() {
+                if (audioCtx) return; // Initialize only once
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                source = audioCtx.createMediaElementSource(audio);
+                
+                source.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                
+                analyser.fftSize = 256;
+                bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                
+                draw();
+            }
+
+            function draw() {
+                requestAnimationFrame(draw);
+                if (!analyser) return;
+                
+                analyser.getByteFrequencyData(dataArray);
+                
+                canvasCtx.fillStyle = '#000';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                let barWidth = (canvas.width / bufferLength) * 2.5;
+                let barHeight;
+                let x = 0;
+                
+                // We'll draw fewer bars for a more classic look
+                for(let i = 0; i < bufferLength; i++) {
+                    barHeight = dataArray[i] / 2;
+                    
+                    // Classic green bars
+                    canvasCtx.fillStyle = 'rgb(0, ' + (barHeight + 100) + ', 0)';
+                    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                    
+                    x += barWidth + 1;
+                }
+            }
+
+            function loadTrack(index) {
+                if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src);
+                currentTrackIndex = index;
+                const track = playlist[index];
+                if (!track) return;
+                
+                audio.src = URL.createObjectURL(track.file);
+                trackTitleEl.textContent = track.title;
+                trackIndexEl.textContent = `${index + 1}.`;
+                audio.load();
+                updatePlaylistUI();
+            }
+
+            function playTrack() {
+                if (playlist.length === 0) return;
+                if (!audioCtx) setupAudioContext(); // Setup on first play
+                
+                audio.play().catch(error => console.error("Playback failed:", error));
+                playBtn.classList.add('hidden');
+                pauseBtn.classList.remove('hidden');
+            }
+
+            function pauseTrack() {
+                audio.pause();
+                playBtn.classList.remove('hidden');
+                pauseBtn.classList.add('hidden');
+            }
+
+            function stopTrack() {
+                pauseTrack();
+                audio.currentTime = 0;
+            }
+
+            function playNext() {
+                if (playlist.length === 0) return;
+                if (repeatMode === 'one') {
+                    loadTrack(currentTrackIndex);
+                    playTrack();
+                    return;
+                }
+                if (isShuffled) {
+                    if (history.length >= playlist.length) history = [];
+                    let nextIndex;
+                    do { nextIndex = Math.floor(Math.random() * playlist.length); } while (history.includes(nextIndex));
+                    history.push(nextIndex);
+                    loadTrack(nextIndex);
+                } else {
+                    let nextIndex = (currentTrackIndex + 1);
+                    if (nextIndex >= playlist.length) {
+                        if (repeatMode === 'all') nextIndex = 0;
+                        else { stopTrack(); return; }
+                    }
+                    loadTrack(nextIndex);
+                }
+                playTrack();
+            }
+
+            function playPrev() {
+                if (playlist.length === 0) return;
+                const prevIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+                loadTrack(prevIndex);
+                playTrack();
+            }
+
+            function renderPlaylist() {
+                playlistEl.innerHTML = '';
+                playlist.forEach((track, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'playlist-item p-1 cursor-pointer hover:bg-gray-400 text-xs truncate';
+                    item.textContent = `${index + 1}. ${track.title}`;
+                    item.dataset.index = index;
+                    playlistEl.appendChild(item);
+                });
+                updatePlaylistUI();
+            }
+            
+            function updatePlaylistUI() {
+                Array.from(playlistEl.children).forEach((item, index) => {
+                    item.classList.toggle('active', index === currentTrackIndex);
+                });
+            }
+
+            function formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${minutes}:${String(secs).padStart(2, '0')}`;
+            }
+            
+            addFilesBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (event) => {
+                const files = Array.from(event.target.files);
+                if (files.length === 0) return;
+                const wasEmpty = playlist.length === 0;
+                playlist.push(...files.map(file => ({ title: file.name, file: file })));
+                renderPlaylist();
+                if (wasEmpty) loadTrack(0);
+                fileInput.value = ''; 
+            });
+
+            playBtn.addEventListener('click', playTrack);
+            pauseBtn.addEventListener('click', pauseTrack);
+            stopBtn.addEventListener('click', stopTrack);
+            nextBtn.addEventListener('click', playNext);
+            prevBtn.addEventListener('click', playPrev);
+            audio.addEventListener('ended', playNext);
+            
+            audio.addEventListener('timeupdate', () => {
+                if (isNaN(audio.duration)) return;
+                seekBar.value = (audio.currentTime / audio.duration) * 100;
+                timeDisplayEl.textContent = formatTime(audio.currentTime);
+            });
+
+            seekBar.addEventListener('input', () => {
+                if (!isNaN(audio.duration)) audio.currentTime = (seekBar.value / 100) * audio.duration;
+            });
+
+            volumeSlider.addEventListener('input', () => audio.volume = volumeSlider.value / 100);
+            
+            playlistEl.addEventListener('dblclick', (e) => {
+                if (e.target.matches('.playlist-item')) {
+                    const index = parseInt(e.target.dataset.index, 10);
+                    loadTrack(index);
+                    playTrack();
+                }
+            });
+
+            plBtn.addEventListener('click', () => {
+                playlistWindow.classList.toggle('hidden');
+                plBtn.classList.toggle('active');
+            });
+
+            shuffleBtn.addEventListener('click', () => {
+                isShuffled = !isShuffled;
+                shuffleBtn.classList.toggle('active');
+                history = []; 
+            });
+
+            repeatBtn.addEventListener('click', () => {
+                const modes = ['none', 'all', 'one'];
+                const currentModeIndex = modes.indexOf(repeatMode);
+                repeatMode = modes[(currentModeIndex + 1) % modes.length];
+                switch(repeatMode) {
+                    case 'none': repeatBtn.textContent = 'REPEAT'; break;
+                    case 'all': repeatBtn.textContent = 'REP:ALL'; break;
+                    case 'one': repeatBtn.textContent = 'REP:ONE'; break;
+                }
+                repeatBtn.classList.toggle('active', repeatMode !== 'none');
+            });
+        });
+    </script>
+</body>
+</html>
