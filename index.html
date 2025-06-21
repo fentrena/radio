@@ -324,26 +324,29 @@
             }
             
             // --- Player Controls (Mobile Fix Included) ---
-            function playStream() {
+            async function playStream() {
                 // 1. Setup audio context if it doesn't exist
                 if (!audioCtx) {
                     setupAudioContext();
                 }
                 
-                // 2. Resume audio context if it's suspended (for mobile)
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-                
-                // 3. Play the audio stream
-                audio.play().catch(error => {
-                    console.error("Playback failed:", error);
-                    trackTitleEl.textContent = "Stream Error";
-                });
+                try {
+                    // 2. Resume audio context if it's suspended (for mobile). Await ensures it's ready.
+                    if (audioCtx.state === 'suspended') {
+                        await audioCtx.resume();
+                    }
+                    
+                    // 3. Play the audio stream. Await ensures playback has started.
+                    await audio.play();
 
-                // 4. Update button visibility
-                playBtn.classList.add('hidden');
-                pauseBtn.classList.remove('hidden');
+                    // 4. Update button visibility
+                    playBtn.classList.add('hidden');
+                    pauseBtn.classList.remove('hidden');
+
+                } catch (error) {
+                    console.error("Playback or context resume failed:", error);
+                    trackTitleEl.textContent = "Stream Error";
+                }
             }
 
             function pauseStream() {
