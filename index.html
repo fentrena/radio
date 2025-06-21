@@ -323,14 +323,25 @@
                 }
             }
             
-            // --- Player Controls ---
+            // --- Player Controls (Mobile Fix Included) ---
             function playStream() {
-                if (!audioCtx) setupAudioContext();
+                // 1. Setup audio context if it doesn't exist
+                if (!audioCtx) {
+                    setupAudioContext();
+                }
                 
+                // 2. Resume audio context if it's suspended (for mobile)
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                // 3. Play the audio stream
                 audio.play().catch(error => {
                     console.error("Playback failed:", error);
                     trackTitleEl.textContent = "Stream Error";
                 });
+
+                // 4. Update button visibility
                 playBtn.classList.add('hidden');
                 pauseBtn.classList.remove('hidden');
             }
